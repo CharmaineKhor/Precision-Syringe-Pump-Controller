@@ -4,13 +4,12 @@ import time # for sleep
 from pyfirmata import Arduino,util
 import subprocess
 import serial
-#import serial.tools.list_ports
+import serial.tools.list_ports
 import warnings
 from multiprocessing import Process
 import threading
-#from decimal import Decimal
 
-#Automatic arduino port searching
+#Automatic arduino port searching (optional if COM port is known)
 #arduino_ports = [p.device
 #    for p in serial.tools.list_ports.comports()
 #    if 'Arduino' in p.description]
@@ -20,15 +19,15 @@ import threading
 #    warnings.warn('Multiple Arduinos found - using the first')
 #arduinoData = serial.Serial(arduino_ports[0], 9600, timeout=1)
 
-
-#arduinoData = serial.Serial('COM4', 9600, timeout=1)
+#If COM port is known, use the following line instead of the above code
+arduinoData = serial.Serial('COM7', 9600, timeout=1)
 
 StopFill = 1
 StopEmpty = 1
 FillProcesses = 0
 EmptyProcesses = 0
 root = Tk() # the boxy window widget
-root.title("Contact Angle Dispenser")
+root.title("Syringe Controller")
 
 # for users to enter numbers  
 StepsEntry = Entry(root, width=15, borderwidth = 5)
@@ -68,7 +67,7 @@ def FillSubprocess():
     FillRounds = int(FillEntry.get())
     while StopFill != 0:
         if x <= FillRounds:
-            #arduinoData.write(b'0')
+            arduinoData.write(b'0\n')
             print('FillProcesses: ' + str(FillProcesses))
             print('EmptyProcesses: ' + str(EmptyProcesses))
             print('Filling' + str(x))
@@ -98,8 +97,8 @@ def EmptySubprocess():
     y=1
     EmptyRounds = int(EmptyEntry.get())
     while StopEmpty != 0:
-        if y <= EmptyRounds & StopEmpty!=0:
-            #arduinoData.write(b'1')
+        if y <= EmptyRounds and StopEmpty!=0:
+            arduinoData.write(b'1\n')
             print('FillProcesses: ' + str(FillProcesses))
             print('EmptyProcesses: ' + str(EmptyProcesses))
             print('Emptying' + str(y))
@@ -114,21 +113,15 @@ def EmptySubprocess():
 
 def Steps():
     global Steps
-    Stepss = str(8) + str(StepsEntry.get())
-    ASteps = int(Stepss)
-    BSteps = int(str(ASteps)[1:None])
-    print (' Steps ' + str(BSteps))
-    #arduinoData.write(ASteps.encode())    
+    Stepss = "8:" + str(StepsEntry.get()) + "\n"
+    arduinoData.write(Stepss.encode())    
     Func3 = Label(root, text = "Steps set to " + StepsEntry.get())
     Func3.grid(row=92, column=0, columnspan=3)
 
 def Speed():
     global Speeds
-    Speeds = str(9) + str(SpeedEntry.get())
-    ASpeed = int(Speeds)
-    BSpeed = int(str(ASpeed)[1:None])
-    print (' Speed ' + str(BSpeed))
-    #arduinoData.write(ASpeed.encode())
+    Speeds = "9:" + str(SpeedEntry.get()) + "\n"
+    arduinoData.write(Speeds.encode())
     Func4 = Label(root, text = "Speed set to " + SpeedEntry.get())
     Func4.grid(row=93, column=0, columnspan=3)
 
@@ -140,7 +133,7 @@ def Dispense():
     Stepping.start()
     Stopping = threading.Thread(target = Stop)
     Stopping.start()
-    #arduinoData.write(b'2')
+    arduinoData.write(b'2\n')
 
 
 def Stop():
@@ -148,13 +141,13 @@ def Stop():
     global StopEmpty
     StopFill = 0
     StopEmpty = 0
-    #arduinoData.write(b'3')
+    arduinoData.write(b'3\n')
     
 #default texts to be seen on widget
 SetStepsButton = Button(root, text = "Set Steps", padx=10, command=Steps, bg="aqua", borderwidth = 3).grid(row=0, column = 1) 
-SetStepsLabel = Label(root, text = "98 steps per drop").grid(row=1, column = 2) # label set to go into root window, grid for position
+SetStepsLabel = Label(root, text = "Droplet Size").grid(row=1, column = 2) # label set to go into root window, grid for position
 SetSpeedButton = Button(root, text = "Set Speed", padx=10  , command=Speed, bg="aqua", borderwidth = 3).grid(row=2, column = 1)
-SetSpeedLabel = Label(root, text = "1K-5K").grid(row=3, column = 2)
+SetSpeedLabel = Label(root, text = "Dispense Speed").grid(row=3, column = 2)
 
 EmptySpace1 = Label(root, text = "   ").grid(row=4, column = 2)
 
